@@ -225,3 +225,19 @@ for (let i = 0; i < map.length; i++) {
 
 // console.log(results.path);
 console.log(results.distance - 1);
+
+
+output = 'x,y,height,path';
+
+for (let i = 0; i < map.length; i++) {
+    for (let j = 0; j < map[i].length; j++) {
+        if (results.path.includes(getNodeName(map.length - i - 1, j)) && getNodeName(map.length - i - 1, j) !== 1601) {
+            output += `\n${i},${j},${map[map.length - i - 1][j].charCodeAt(0) - 'a'.charCodeAt(0) + 1},true`;
+        } else {
+            output += `\n${i},${j},${map[map.length - i - 1][j].charCodeAt(0) - 'a'.charCodeAt(0) + 1},false`;
+        }
+    }
+}
+
+
+fs.writeFileSync('vis/output3.csv', output);

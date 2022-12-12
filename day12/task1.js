@@ -158,6 +158,22 @@ let startNode;
 let endNode;
 
 fixLetters();
+
+let output = 'x,y,height';
+
+// for (let i = 0; i < map.length; i++) {
+//     let row = '\n' + map[i].map(char => char.charCodeAt(0) - 'a'.charCodeAt(0) + 1).join(',');
+//     output += row;
+// }
+
+for (let i = 0; i < map.length; i++) {
+    for (let j = 0; j < map[i].length; j++) {
+        output += `\n${i},${j},${map[map.length - 1 - i][j].charCodeAt(0) - 'a'.charCodeAt(0) + 1}`;
+    }
+}
+
+fs.writeFileSync('vis/output1.csv', output);
+
 createGraph();
 
 const results = findShortestPath(graph, startNode, endNode);
@@ -187,3 +203,19 @@ for (let i = 0; i < map.length; i++) {
 
 // console.log(results.path);
 console.log(results.distance);
+
+
+output = 'x,y,height,path';
+
+for (let i = 0; i < map.length; i++) {
+    for (let j = 0; j < map[i].length; j++) {
+        if (results.path.includes(getNodeName(map.length - i - 1, j))) {
+            output += `\n${i},${j},${map[map.length - i - 1][j].charCodeAt(0) - 'a'.charCodeAt(0) + 1},true`;
+        } else {
+            output += `\n${i},${j},${map[map.length - i - 1][j].charCodeAt(0) - 'a'.charCodeAt(0) + 1},false`;
+        }
+    }
+}
+
+
+fs.writeFileSync('vis/output2.csv', output);
