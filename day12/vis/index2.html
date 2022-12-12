@@ -52,15 +52,13 @@
 
 
             // Build color scale
-            var myColor = d3.scaleLinear()
-                .range(["#c9bdbd", "#242424"])
-                // .range(d3.quantize(d3.interpolateHcl("#c9bdbd", "#00FF00FF"), 999))
-                .domain([1, 26])
+            var myColor = d3.scalePow()
+                .range(["#6AA85B", "#D9CC9A", "#FFFFFF"])
+                .domain([1, 22, 26])
 
-            var pathColor = d3.scaleLinear()
-                .range(["#cf5648", "#371410"])
-                // .range(d3.quantize(d3.interpolateHcl("#c9bdbd", "#00FF00FF"), 999))
-                .domain([1, 26])
+            var pathColor = d3.scalePow()
+                .range(["#426938", "#99906d", "#bfbfbf"])
+                .domain([1, 22, 26])
 
             var defs = svg.append("defs");
 
@@ -73,8 +71,8 @@
                     .attr("r", "50%")	//not really needed, since 50% is the default
                     .selectAll("stop")
                     .data([
-                        { offset: "0%", color: pathColor(26 - i) },
-                        { offset: "40%", color: pathColor(26 - i) },
+                        { offset: "0%", color: pathColor(i) },
+                        { offset: "40%", color: pathColor(i) },
                         { offset: "50%", color: myColor(i) },
                         { offset: "100%", color: myColor(i) }
                     ])

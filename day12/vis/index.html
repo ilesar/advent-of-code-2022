@@ -52,9 +52,9 @@
 
 
             // Build color scale
-            var myColor = d3.scaleLinear()
-                .range(["#c9bdbd", "#242424"])
-                .domain([1, 26])
+            var myColor = d3.scalePow()
+                .range(["#6AA85B", "#D9CC9A", "#FFFFFF"])
+                .domain([1, 22, 26])
 
             //Read the data
 
@@ -66,7 +66,28 @@
                 .attr("y", function (d) { return y(d.x) })
                 .attr("width", x.bandwidth())
                 .attr("height", y.bandwidth())
-                .style("fill", function (d) { return myColor(d.height) })
+                .style("fill", function (d) {
+
+                    // if (d.height == 23) {
+                    //     return '#DDDDDD';
+                    // }
+
+                    // if (d.height == 24) {
+                    //     return '#DDDDDD';
+                    // }
+
+                    // if (d.height == 25) {
+                    //     return '#EEEEEE';
+                    // }
+
+                    // if (d.height == 26) {
+                    //     return '#FFFFFF';
+                    // }
+
+                    return myColor(d.height)
+
+
+                })
 
         })();
 
