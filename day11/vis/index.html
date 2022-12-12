@@ -12,10 +12,11 @@
     <div id="my_dataviz"></div>
 
     <script>
+        currentWidth = parseInt(d3.select('#my_dataviz').style('width'), 10)
 
         // set the dimensions and margins of the graph
         var margin = { top: 20, right: 30, bottom: 0, left: 10 },
-            width = 1280 - margin.left - margin.right,
+            width = currentWidth - margin.left - margin.right,
             height = 320 - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
@@ -36,7 +37,7 @@
             console.log(data.map(item => parseInt(item.round)));
             // Add X axis
             var x = d3.scaleLinear()
-                .domain([1, data.length])
+                .domain([1, Math.max(...data.map(item => parseInt(item.round)))])
                 // .domain(d3.extent(data, function (d) { return d.round; }))
                 .range([0, width]);
             svg.append("g")

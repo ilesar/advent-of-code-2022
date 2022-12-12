@@ -13,9 +13,11 @@
 
     <script>
 
+        currentWidth = parseInt(d3.select('#my_dataviz').style('width'), 10)
+
         // set the dimensions and margins of the graph
         var margin = { top: 20, right: 30, bottom: 0, left: 10 },
-            width = 1280 - margin.left - margin.right,
+            width = currentWidth - margin.left - margin.right,
             height = 320 - margin.top - margin.bottom;
 
         // append the svg object to the body of the page
@@ -68,12 +70,6 @@
                 .domain([0, 36])
                 .range([height * 0.8, margin.top]);
 
-            function shuffleArray(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-            }
             // color palette
             var color = d3.scaleOrdinal()
                 .domain(keys)
