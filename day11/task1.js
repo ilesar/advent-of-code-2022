@@ -70,6 +70,8 @@ for (const dataItem of data) {
     monkeys.push(monkey);
 }
 
+let output = 'round,' + Array.from(Array(monkeys.length).keys()).map(key => `Monkey ${key}`).join(',');
+
 for (let r = 0; r < 20; r++) {
     for (let m = 0; m < monkeys.length; m++) {
         const currentMonkey = monkeys[m];
@@ -91,7 +93,12 @@ for (let r = 0; r < 20; r++) {
             monkeys[newMonkeyIndex].items.push(currentItem);
         }
     }
+
+    output += '\n' + `${r + 1},` + monkeys.map(monkey => monkey.items.length).join(',');
 }
+
+fs.writeFileSync('vis/output1.csv', output);
+console.log(monkeys.reduce((agg, monkey) => agg + monkey.items.length, 0))
 
 
 monkeys.sort((a, b) => b.inspections - a.inspections);
