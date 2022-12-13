@@ -111,14 +111,32 @@ function calculateLeft(i, j) {
 
 
 let result = 0;
+let resultCoords;
 
 for (let i = 0; i < scenicData.length; i++) {
     for (let j = 0; j < scenicData[i].length; j++) {
         if (scenicData[i][j] > result) {
             result = scenicData[i][j];
+            resultCoords = [i, j];
         }
     }
 }
+
+let output = '';
+
+for (let i = 0; i < data.length; i++) {
+    let row = '';
+    for (let j = 0; j < data[i].length; j++) {
+        if (i == resultCoords[0] && j == resultCoords[1]) {
+            row += 'H';
+        } else {
+            row += data[i][j];
+        }
+    }
+    output += row + '\n';
+}
+
+fs.writeFileSync('vis/output1.txt', output);
 
 
 console.log(result);
