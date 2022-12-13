@@ -29,7 +29,6 @@
 
             const data = await fetch("http://localhost:8080?task=output0").then(response => response.text());
 
-            console.log(data.body);
             const matrix = data.split('\n').map(row => row.split(''));
 
             let camera, controls, scene, renderer;
@@ -74,21 +73,21 @@
                 const randomness = 0;
 
 
-                for (let i = 0; i < matrix.length; i++) {
-                    for (let j = 0; j < matrix[i].length; j++) {
-                        if (matrix[i][j] != 'H') {
-                            createTree(matrix[i][j], i, j);
-                        } else {
-                            // createTree(20, i, j);
-                        }
-                    }
-                }
+                // for (let i = 0; i < matrix.length; i++) {
+                //     for (let j = 0; j < matrix[i].length; j++) {
+                //         if (matrix[i][j] != 'H') {
+                //             createTree(matrix[i][j], i, j);
+                //         } else {
+                //             // createTree(20, i, j);
+                //         }
+                //     }
+                // }
 
-                for (let i = 0; i < 500; i++) {
-                    const randomX = randomNumber(-100, 100);
-                    const randomY = randomNumber(-100, 100);
-                    createTree(randomNumber(1, 5), randomX, randomY);
-                }
+                // for (let i = 0; i < 500; i++) {
+                //     const randomX = randomNumber(-100, 100);
+                //     const randomY = randomNumber(-100, 100);
+                //     createTree(randomNumber(1, 5), randomX, randomY);
+                // }
 
                 function randomNumber(min, max) {
                     if (min > max) {
@@ -138,40 +137,78 @@
 
                 // addGrass();
 
-                function createTree(size, posx, posy) {
-                    const geometryWood = new THREE.CylinderGeometry(3, 3, 20, 10, 1);
+
+
+                function createBranch(children, posX, posY, posZ, length, baseRadius, rotX, rotZ) {
+                    if (children == 0) {
+                        return;
+                    }
+
+
+                    const geometryWood = new THREE.CylinderGeometry(baseRadius / 1.618, baseRadius, length, 10, 1);
                     const materialWood = new THREE.MeshPhongMaterial({ color: 0x964B00, flatShading: true });
+                    geometryWood.translate(0, length / 2, 0);
+                    const mesh = new THREE.Mesh(geometryWood, materialWood);
 
-                    if (size > 0) {
-                        const mesh = new THREE.Mesh(geometryWood, materialWood);
-                        mesh.position.x = (posx - matrix.length / 2) * 20;
-                        mesh.position.y = 10;
-                        mesh.position.z = (posy - matrix.length / 2) * 20;
-                        mesh.updateMatrix();
-                        mesh.matrixAutoUpdate = false;
-                        scene.add(mesh);
+                    mesh.position.x = posX;
+                    mesh.position.y = posY;
+                    mesh.position.z = posZ;
 
+                    const rand = randomNumber(20, 30);
+                    console.log(rand);
+                    mesh.rotation.x = Math.PI / rand;
+                    mesh.rotation.z = Math.PI / rand;
+
+                    mesh.updateMatrix();
+                    mesh.matrixAutoUpdate = false;
+
+                    scene.add(mesh);
+                    if (children == 1) {
+                        console.log(length * Math.cos(mesh.rotation.x));
+                        console.log(posX + length * Math.cos(mesh.rotation.x));
+                        console.log(posZ + length * Math.cos(mesh.rotation.z));
                     }
 
-                    const randomRotation = Math.floor(Math.random() * 90);
-                    const xShift = randomNumber(-randomness, randomness)
-                    const yShift = randomNumber(-randomness, randomness);
-
-                    for (let i = 0; i < size; i++) {
-                        const geometry = new THREE.CylinderGeometry(0, 10 - i, 30, 12, 1);
-                        const material = new THREE.MeshPhongMaterial({ color: 0x446e30, flatShading: true });
-
-
-                        const mesh = new THREE.Mesh(geometry, material);
-                        mesh.position.x = (posx - matrix.length / 2) * 20 + xShift;
-                        mesh.position.y = i * 10 + 30;
-                        mesh.position.z = (posy - matrix.length / 2) * 20 + yShift;
-                        mesh.rotation.y = randomRotation;
-                        mesh.updateMatrix();
-                        mesh.matrixAutoUpdate = false;
-                        scene.add(mesh);
-                    }
+                    createBranch(children - 1, posX + length * Math.sin(mesh.rotation.x), posY + length, posZ + length * Math.sin(mesh.rotation.z), length / 1.618, baseRadius / 1.618, 0, 0);
                 }
+
+                function createTree(size, posx, posy) {
+                    createBranch(size, 0, 0, 0, size * 16.18, size, 0, 0);
+                }
+
+                createTree(2, 0, 0);
+
+
+                // if (size > 0) {
+                //     const mesh = new THREE.Mesh(geometryWood, materialWood);
+                //     mesh.position.x = (posx - matrix.length / 2) * 20;
+                //     mesh.position.y = 5 * size;
+                //     mesh.position.z = (posy - matrix.length / 2) * 20;
+                //     mesh.updateMatrix();
+                //     mesh.matrixAutoUpdate = false;
+                //     scene.add(mesh);
+
+                // }
+
+                // const randomRotation = Math.floor(Math.random() * 90);
+                // const xShift = randomNumber(-randomness, randomness)
+                // const yShift = randomNumber(-randomness, randomness);
+
+                // for (let i = 0; i < size; i++) {
+                //     const geometry = new THREE.CylinderGeometry(0, 10 - i, 30, 12, 1);
+                //     const material = new THREE.MeshPhongMaterial({ color: 0x446e30, flatShading: true });
+
+
+                //     const mesh = new THREE.Mesh(geometry, material);
+                //     mesh.position.x = (posx - matrix.length / 2) * 20 + xShift;
+                //     mesh.position.y = i * 10 + 30;
+                //     mesh.position.z = (posy - matrix.length / 2) * 20 + yShift;
+                //     mesh.rotation.y = randomRotation;
+                //     mesh.updateMatrix();
+                //     mesh.matrixAutoUpdate = false;
+                //     scene.add(mesh);
+                // }
+                // }
 
                 const dirLight1 = new THREE.DirectionalLight(0xffffff);
                 dirLight1.position.set(1, 1, 1);
