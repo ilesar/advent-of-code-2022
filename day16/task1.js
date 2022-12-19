@@ -120,7 +120,6 @@ function calculateValveValues(currentValve, remainingValves, remainingMinutes, s
     return;
   }
   if (sum > maxPressure) {
-    // console.log(sum);
     maxPressure = sum;
   }
 
@@ -161,7 +160,6 @@ const valvesWithPositiveRate = initialValves.filter(valve => valve.rate != 0 || 
 
 fillDistanceMap(valvesWithPositiveRate);
 
-// console.log(distanceMap);
 calculateValveValues(
   currentValve,
   valvesWithPositiveRate.filter(valve => valve.name != currentValve),

@@ -1,5 +1,4 @@
 const fs = require('fs');
-const internal = require('stream');
 
 const input = fs.readFileSync(`${__dirname}/input.txt`, 'utf8');
 
@@ -66,7 +65,23 @@ function findShortestPath(graph, startNode, endNode) {
   return results;
 };
 
-function getValveData(input) {
+function getShortestPath(pointA, pointB) {
+  let savedDistance = distanceMap.get(`${pointA}-${pointB}`);
+
+
+  if (savedDistance == null) {
+    savedDistance = distanceMap.get(`${pointB}-${pointA}`);
+  }
+
+  if (savedDistance == null) {
+    throw new Error("DAFUQ?!");
+  }
+
+  return savedDistance;
+}
+
+
+function getValves(input) {
   return input.trim().split('\n').map(item => {
     const match = item.match(/Valve (\w+) has flow rate=(\d+); tunnel[s]* lead[s]* to valve[s]*\s(.*)/);
 
@@ -78,9 +93,9 @@ function getValveData(input) {
   })
 }
 
-function createValveGraph(valveData) {
+function createValveGraph(valves) {
   const graph = {};
-  for (const valve of valveData) {
+  for (const valve of valves) {
     graph[valve.name] = {};
 
     for (const connectedValve of valve.connectedValves) {
@@ -91,120 +106,124 @@ function createValveGraph(valveData) {
   return graph;
 }
 
-const distanceMap = new Map();
-
-
-function calculateValveValues(valveData, valveGraph, currentValves, remainingMinutes, elephantRemainingMinutes, visitedValves, sum, iteration) {
-  if (remainingMinutes <= 0 || elephantRemainingMinutes <= 0) {
-    if (sum > maxPressure) {
-      maxPressure = sum;
-      console.clear();
-      console.log(maxPressure);
+function fillDistanceMap(valves) {
+  for (let i = 0; i < valves.length; i++) {
+    for (let j = 0; j < valves.length; j++) {
+      const distance = findShortestPath(valveGraph, valves[i].name, valves[j].name).distance;
+      distanceMap.set(`${valves[i].name}-${valves[j].name}`, distance == "Infinity" ? 0 : distance);
     }
+  }
+}
+
+function calculateValveValues(currentValves, remainingValves, remainingMinutesMultiple, sum, visited, iteration) {
+  if (remainingMinutesMultiple[0] <= 0 && remainingMinutesMultiple[1] <= 0) {
+    // console.log(remainingMinutesMultiple);
+    // console.log(currentValves)
+    // console.log('NO MORE MINUTES')
     return;
   }
 
-  // console.log('CURRENT', currentValves);
-  // console.log('ME', remainingMinutes);
-  // console.log('ELEPHANT', elephantRemainingMinutes);
+  visited = [
+    [...visited[0], `${currentValves[0]}-${remainingMinutesMultiple[0]}-${sum[0]}`],
+    [...visited[1], `${currentValves[1]}-${remainingMinutesMultiple[1]}-${sum[1]}`]
+  ];
 
-  // if (iteration >= 2) {
-  //   process.exit(0);
-  // }
+  if ((sum[0] + sum[1]) > maxPressure) {
+    // console.log(visited);
+    maxVisited = visited;
+    maxPressure = sum[0] + sum[1];
+  }
 
-  let potentialValves = valveData.filter(valve => !visitedValves.includes(valve.name) && !currentValves.includes(valve.name)).map(valve => {
-    const savedDistance = distanceMap.get(`${currentValve}-${valve.name}`);
-    let shortestDistance;
-    if (!savedDistance) {
-      shortestDistance = findShortestPath(valveGraph, currentValve, valve.name).distance;
-      shortestDistance = shortestDistance == "Infinity" ? 0 : shortestDistance;
+  if (remainingValves.length <= 0) {
+    // console.log(remainingMinutesMultiple);
+    // console.log(currentValves)
+    // console.log('NO MORE VALVES')
+    return;
+  }
 
-      distanceMap.set(`${currentValve}-${valve.name}`, shortestDistance);
-    } else {
-      shortestDistance = savedDistance;
-    }
+  const humanRemainingValves = [];
+  const elephantRemainingValves = [];
 
+  for (let i = 0; i < remainingValves.length; i++) {
+    const shortestDistance = getShortestPath(currentValves[0], remainingValves[i].name);
 
-    return {
-      name: valve.name,
+    humanRemainingValves[i] = {
+      name: remainingValves[i].name,
       distance: shortestDistance,
-      rate: valve.rate,
-      gain: ((remainingMinutes - shortestDistance - 1) * valve.rate)
-    }
-  }).sort((a, b) => a.distance - b.distance).filter(potentialValue => potentialValue.gain > 0)
-
-  let elephantPotentialValves = valveData.filter(valve => !visitedValves.includes(valve.name) && !currentValves.includes(valve.name)).map(valve => {
-    const savedDistance = distanceMap.get(`${currentValve}-${valve.name}`);
-    let shortestDistance;
-    if (!savedDistance) {
-      shortestDistance = findShortestPath(valveGraph, currentValve, valve.name).distance;
-      shortestDistance = shortestDistance == "Infinity" ? 0 : shortestDistance;
-
-      distanceMap.set(`${currentValve}-${valve.name}`, shortestDistance);
-    } else {
-      shortestDistance = savedDistance;
-    }
-
-    return {
-      name: valve.name,
-      distance: shortestDistance,
-      rate: valve.rate,
-      gain: ((elephantRemainingMinutes - shortestDistance - 1) * valve.rate)
-    }
-  }).sort((a, b) => a.distance - b.distance).filter(potentialValue => potentialValue.gain > 0)
-
-  // console.log(potentialValves);
-  // process.exit(0);
-
-  if (potentialValves.length == 0 && elephantPotentialValves == 0) {
-    // console.log("NO POTENTIAL VALUES LEFT", sum);
-    if (sum > maxPressure) {
-      maxPressure = sum;
-      console.clear();
-      console.log(maxPressure);
+      rate: remainingValves[i].rate,
+      gain: ((remainingMinutesMultiple[0] - shortestDistance - 1) * remainingValves[i].rate)
     }
   }
 
-  // console.log(potentialValves.length);
-  // console.log('POT', potentialValves);
-  // console.log(sum);
-  // console.log(Math.max(...pressures));
-  // if (Math.max(...pressures) > 1707) {
+  for (let i = 0; i < remainingValves.length; i++) {
+    const shortestDistance = getShortestPath(currentValves[1], remainingValves[i].name);
 
-  //   process.exit(0)
-  // }
-
-
-  for (const potentialValve of potentialValves) {
-    const otherValves = elephantPotentialValves.filter(potVal => potVal.name != potentialValve.name);
-    // console.log(otherValves);
-
-    for (const otherValve of otherValves) {
-
-      // console.log('M', potentialValve.name, remainingMinutes);
-      // console.log('E', otherValve.name, elephantRemainingMinutes);
-
-      // console.log(potentialValve);
-      // console.log(otherValve);
-      // console.log('---')
-
-      calculateValveValues(valveData, valveGraph, [potentialValve.name, otherValve.name], remainingMinutes - potentialValve.distance - 1, elephantRemainingMinutes - otherValve.distance - 1, [...visitedValves, ...currentValves], sum + potentialValve.gain + otherValve.gain, iteration + 1);
+    elephantRemainingValves[i] = {
+      name: remainingValves[i].name,
+      distance: shortestDistance,
+      rate: remainingValves[i].rate,
+      gain: ((remainingMinutesMultiple[1] - shortestDistance - 1) * remainingValves[i].rate)
     }
   }
 
+  // remainingValves.sort((a, b) => a.distance - b.distance);
+  for (const humanRemainingValve of humanRemainingValves) {
+    const leftoverValves = elephantRemainingValves.filter(valve => valve.name != humanRemainingValve.name);
+    // console.log(humanRemainingValves);
+    // console.log(leftoverValves);
+
+    for (const leftoverValve of leftoverValves) {
+
+      // console.log('H', `${currentValves[0]}->${humanRemainingValve.name}`);
+      // console.log('E', `${currentValves[1]}->${leftoverValve.name}`);
+      // console.log('');
+      // if (iteration >= 3) {
+      //   process.exit(0);
+      // }
+
+      iteration++;
+      if (humanRemainingValve.name == "JJ" && leftoverValve.name == "JJ") {
+        throw new Error("WUT!!!");
+      }
+      calculateValveValues(
+        [humanRemainingValve.name, leftoverValve.name],
+        remainingValves.filter(valve => valve.name != humanRemainingValve.name && valve.name != leftoverValve.name),
+        [remainingMinutesMultiple[0] - humanRemainingValve.distance - 1, remainingMinutesMultiple[1] - leftoverValve.distance - 1],
+        [sum[0] + humanRemainingValve.gain, sum[1] + leftoverValve.gain],
+        visited,
+        iteration
+      );
+    }
+
+  }
 }
 
+
+
+const distanceMap = new Map();
+var start = process.hrtime()
 let MINUTES = 26;
-
-const valveData = getValveData(input);
-const valveGraph = createValveGraph(valveData);
-
 currentValve = 'AA';
-const pressures = [];
 let maxPressure = 0;
+let maxVisited;
 
-const cleanedValveData = valveData.filter(valve => valve.rate != 0);
-calculateValveValues(cleanedValveData, valveGraph, [currentValve, currentValve], MINUTES, MINUTES, [], 0, 0);
+const initialValves = getValves(input);
+const valveGraph = createValveGraph(initialValves);
+const valvesWithPositiveRate = initialValves.filter(valve => valve.rate != 0 || valve.name == "AA");
 
-console.log('final', maxPressure);
+fillDistanceMap(valvesWithPositiveRate);
+// console.log(distanceMap);
+calculateValveValues(
+  [currentValve, currentValve],
+  valvesWithPositiveRate.filter(valve => valve.name != currentValve),
+  [MINUTES, MINUTES],
+  [0, 0],
+  [[], []],
+  0
+);
 
+console.log('RESULT', maxPressure);
+console.log(maxVisited);
+
+var end = process.hrtime(start)
+console.info('Final time: %ds %dms', end[0], end[1] / 1000000)
