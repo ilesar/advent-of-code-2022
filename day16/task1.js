@@ -65,7 +65,23 @@ function findShortestPath(graph, startNode, endNode) {
   return results;
 };
 
-function getValveData(input) {
+function getShortestPath(pointA, pointB) {
+  let savedDistance = distanceMap.get(`${pointA}-${pointB}`);
+
+
+  if (savedDistance == null) {
+    savedDistance = distanceMap.get(`${pointB}-${pointA}`);
+  }
+
+  if (savedDistance == null) {
+    throw new Error("DAFUQ?!");
+  }
+
+  return savedDistance;
+}
+
+
+function getValves(input) {
   return input.trim().split('\n').map(item => {
     const match = item.match(/Valve (\w+) has flow rate=(\d+); tunnel[s]* lead[s]* to valve[s]*\s(.*)/);
 
@@ -77,9 +93,9 @@ function getValveData(input) {
   })
 }
 
-function createValveGraph(valveData) {
+function createValveGraph(valves) {
   const graph = {};
-  for (const valve of valveData) {
+  for (const valve of valves) {
     graph[valve.name] = {};
 
     for (const connectedValve of valve.connectedValves) {
@@ -90,58 +106,70 @@ function createValveGraph(valveData) {
   return graph;
 }
 
-function calculateValveValues(valveData, valveGraph, currentValve, remainingMinutes, visitedValves, sum, iteration, visitedValves) {
-  visitedValves = [...visitedValves, currentValve];
-
-  if (remainingMinutes <= 0) {
-    if (sum > maxPressure) {
-      maxPressure = sum;
-      console.clear();
-      console.log(maxPressure);
-      console.log(visitedValves);
+function fillDistanceMap(valves) {
+  for (let i = 0; i < valves.length; i++) {
+    for (let j = 0; j < valves.length; j++) {
+      const distance = findShortestPath(valveGraph, valves[i].name, valves[j].name).distance;
+      distanceMap.set(`${valves[i].name}-${valves[j].name}`, distance == "Infinity" ? 0 : distance);
     }
+  }
+}
+
+function calculateValveValues(currentValve, remainingValves, remainingMinutes, sum) {
+  if (remainingMinutes <= 0 || remainingValves.length == 0) {
     return;
   }
+  if (sum > maxPressure) {
+    // console.log(sum);
+    maxPressure = sum;
+  }
 
-  let potentialValves = valveData.filter(valve => !visitedValves.includes(valve.name) && valve.name != currentValve).map(valve => {
-    let shortestDistance = findShortestPath(valveGraph, currentValve, valve.name).distance;
-    shortestDistance = shortestDistance == "Infinity" ? 0 : shortestDistance
-    return {
-      name: valve.name,
+  for (let i = 0; i < remainingValves.length; i++) {
+    const shortestDistance = getShortestPath(currentValve, remainingValves[i].name);
+
+    remainingValves[i] = {
+      name: remainingValves[i].name,
       distance: shortestDistance,
-      rate: valve.rate,
-      gain: ((remainingMinutes - shortestDistance - 1) * valve.rate)
+      rate: remainingValves[i].rate,
+      gain: ((remainingMinutes - shortestDistance - 1) * remainingValves[i].rate)
     }
-  }).sort((a, b) => a.distance - b.distance).filter(potentialValue => potentialValue.gain > 0)
-
-  if (potentialValves.length == 0) {
-    if (sum > maxPressure) {
-      maxPressure = sum;
-      console.clear();
-      console.log(maxPressure);
-      console.log(visitedValves);
-    }
-    return;
   }
 
-
-  for (const potentialValve of potentialValves) {
-    calculateValveValues(valveData, valveGraph, potentialValve.name, remainingMinutes - potentialValve.distance - 1, [...visitedValves, currentValve], sum + potentialValve.gain, iteration + 1, visitedValves);
+  // remainingValves.sort((a, b) => a.distance - b.distance);
+  for (const remainingValve of remainingValves) {
+    calculateValveValues(
+      remainingValve.name,
+      remainingValves.filter(valve => valve.name != remainingValve.name),
+      remainingMinutes - remainingValve.distance - 1,
+      sum + remainingValve.gain,
+    );
   }
 
 }
 
+
+
+const distanceMap = new Map();
+var start = process.hrtime()
 let MINUTES = 30;
-
-const valveData = getValveData(input);
-const valveGraph = createValveGraph(valveData);
-
 currentValve = 'AA';
-const pressures = [];
 let maxPressure = 0;
 
-const cleanedValveData = valveData.filter(valve => valve.rate != 0);
-calculateValveValues(cleanedValveData, valveGraph, currentValve, MINUTES, [], 0, 0, []);
+const initialValves = getValves(input);
+const valveGraph = createValveGraph(initialValves);
+const valvesWithPositiveRate = initialValves.filter(valve => valve.rate != 0 || valve.name == "AA");
 
-console.log(maxPressure);
+fillDistanceMap(valvesWithPositiveRate);
 
+// console.log(distanceMap);
+calculateValveValues(
+  currentValve,
+  valvesWithPositiveRate.filter(valve => valve.name != currentValve),
+  MINUTES,
+  0,
+);
+
+console.log('RESULT', maxPressure);
+
+var end = process.hrtime(start)
+console.info('Final time: %ds %dms', end[0], end[1] / 1000000)

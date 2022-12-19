@@ -91,6 +91,9 @@ function createValveGraph(valveData) {
   return graph;
 }
 
+const distanceMap = new Map();
+
+
 function calculateValveValues(valveData, valveGraph, currentValves, remainingMinutes, elephantRemainingMinutes, visitedValves, sum, iteration) {
   if (remainingMinutes <= 0 || elephantRemainingMinutes <= 0) {
     if (sum > maxPressure) {
@@ -110,8 +113,18 @@ function calculateValveValues(valveData, valveGraph, currentValves, remainingMin
   // }
 
   let potentialValves = valveData.filter(valve => !visitedValves.includes(valve.name) && !currentValves.includes(valve.name)).map(valve => {
-    let shortestDistance = findShortestPath(valveGraph, currentValves[0], valve.name).distance;
-    shortestDistance = shortestDistance == "Infinity" ? 0 : shortestDistance
+    const savedDistance = distanceMap.get(`${currentValve}-${valve.name}`);
+    let shortestDistance;
+    if (!savedDistance) {
+      shortestDistance = findShortestPath(valveGraph, currentValve, valve.name).distance;
+      shortestDistance = shortestDistance == "Infinity" ? 0 : shortestDistance;
+
+      distanceMap.set(`${currentValve}-${valve.name}`, shortestDistance);
+    } else {
+      shortestDistance = savedDistance;
+    }
+
+
     return {
       name: valve.name,
       distance: shortestDistance,
@@ -121,8 +134,17 @@ function calculateValveValues(valveData, valveGraph, currentValves, remainingMin
   }).sort((a, b) => a.distance - b.distance).filter(potentialValue => potentialValue.gain > 0)
 
   let elephantPotentialValves = valveData.filter(valve => !visitedValves.includes(valve.name) && !currentValves.includes(valve.name)).map(valve => {
-    let shortestDistance = findShortestPath(valveGraph, currentValves[1], valve.name).distance;
-    shortestDistance = shortestDistance == "Infinity" ? 0 : shortestDistance
+    const savedDistance = distanceMap.get(`${currentValve}-${valve.name}`);
+    let shortestDistance;
+    if (!savedDistance) {
+      shortestDistance = findShortestPath(valveGraph, currentValve, valve.name).distance;
+      shortestDistance = shortestDistance == "Infinity" ? 0 : shortestDistance;
+
+      distanceMap.set(`${currentValve}-${valve.name}`, shortestDistance);
+    } else {
+      shortestDistance = savedDistance;
+    }
+
     return {
       name: valve.name,
       distance: shortestDistance,
